@@ -1,5 +1,8 @@
 from fastapi import APIRouter, HTTPException, Path, Query, status
 from typing import List
+
+from app.core.database import SessionDep
+
 from . import schemas, services
 
 router = APIRouter(prefix="/productos", tags=["Productos"])
@@ -12,16 +15,24 @@ router = APIRouter(prefix="/productos", tags=["Productos"])
 @router.post(
     "/", response_model=schemas.ProductoRead, status_code=status.HTTP_201_CREATED
 )
-def alta_producto(producto: schemas.ProductoCreate):
-    return services.crear(producto)
+def alta_producto(producto: schemas.ProductoCreate, session: SessionDep):
+    nuevo, error = services.crear(session, producto)
+    if error == "conflict":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe un producto con el nombre '{producto.nombre}'",
+        )
+    return nuevo
 
 
 # (Extra) LISTAR PRODUCTOS
 @router.get(
     "/", response_model=List[schemas.ProductoRead], status_code=status.HTTP_200_OK
 )
-def listar_productos(skip: int = Query(0, ge=0), limit: int = Query(10, le=50)):
-    return services.obtener_todos(skip, limit)
+def listar_productos(
+    session: SessionDep, skip: int = Query(0, ge=0), limit: int = Query(10, le=50)
+):
+    return services.obtener_todos(session, skip, limit)
 
 
 # ---------------------------------------------------------
@@ -31,8 +42,8 @@ def listar_productos(skip: int = Query(0, ge=0), limit: int = Query(10, le=50)):
 @router.get(
     "/{id}", response_model=schemas.ProductoRead, status_code=status.HTTP_200_OK
 )
-def detalle_producto(id: int = Path(..., gt=0)):
-    producto = services.obtener_por_id(id)
+def detalle_producto(session: SessionDep, id: int = Path(..., gt=0)):
+    producto = services.obtener_por_id(session, id)
     if not producto:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado"
@@ -47,12 +58,19 @@ def detalle_producto(id: int = Path(..., gt=0)):
 @router.put(
     "/{id}", response_model=schemas.ProductoRead, status_code=status.HTTP_200_OK
 )
-def actualizar_producto(producto: schemas.ProductoCreate, id: int = Path(..., gt=0)):
+def actualizar_producto(
+    producto: schemas.ProductoCreate, session: SessionDep, id: int = Path(..., gt=0)
+):
     # Usamos ProductoCreate porque es un reemplazo total (exige todos los campos)
-    actualizado = services.actualizar_total(id, producto)
-    if not actualizado:
+    actualizado, error = services.actualizar_total(session, id, producto)
+    if error == "not_found":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado"
+        )
+    if error == "conflict":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya existe un producto con el nombre '{producto.nombre}'",
         )
     return actualizado
 
@@ -66,8 +84,8 @@ def actualizar_producto(producto: schemas.ProductoCreate, id: int = Path(..., gt
     response_model=schemas.ProductoRead,
     status_code=status.HTTP_200_OK,
 )
-def borrado_logico(id: int = Path(..., gt=0)):
-    desactivado = services.desactivar(id)
+def borrado_logico(session: SessionDep, id: int = Path(..., gt=0)):
+    desactivado = services.desactivar(session, id)
     if not desactivado:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado"
@@ -84,8 +102,8 @@ def borrado_logico(id: int = Path(..., gt=0)):
     response_model=schemas.ProductoStockResponse,
     status_code=status.HTTP_200_OK,
 )
-def consultar_stock(id: int = Path(..., gt=0)):
-    resultado = services.obtener_estado_stock(id)  # Llamada al servicio
+def consultar_stock(session: SessionDep, id: int = Path(..., gt=0)):
+    resultado = services.obtener_estado_stock(session, id)  # Llamada al servicio
     if not resultado:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado"

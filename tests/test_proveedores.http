@@ -2,7 +2,7 @@
 
 ### ==========================================
 ### MÓDULO: PROVEEDORES
-### Ejecutar en orden desde un servidor recién iniciado; el estado es en memoria.
+### Ejecutar en orden contra una base sin proveedores previos (los códigos P-01/P-02 se reutilizan en varios casos).
 ### ==========================================
 
 ### 1. [HU-01] Alta de proveedor válida -> 201

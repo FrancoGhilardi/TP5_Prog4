@@ -1,13 +1,13 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 
 
 class ProveedorBase(BaseModel):
-    codigo: str = Field(..., min_length=1, example="PRO-01")
-    razon_social: str = Field(..., min_length=3, example="ACME SRL")
-    cuit: str = Field(..., min_length=11, max_length=15, example="20304050607")
-    email: str = Field("", example="contacto@acme.com")
-    telefono: str = Field("", example="011-4444-5555")
+    codigo: str = Field(..., min_length=1, examples=["PRO-01"])
+    razon_social: str = Field(..., min_length=3, examples=["ACME SRL"])
+    cuit: str = Field(..., min_length=11, max_length=15, examples=["20304050607"])
+    email: str = Field("", examples=["contacto@acme.com"])
+    telefono: str = Field("", examples=["011-4444-5555"])
     activo: bool = True
 
 
@@ -25,4 +25,6 @@ class ProveedorUpdate(BaseModel):
 
 
 class ProveedorRead(ProveedorBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
