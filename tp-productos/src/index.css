@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+/* Tokens del proyecto: paleta y espaciado consistentes (HU-05) */
+@theme {
+  --color-marca-50: #eef6ff;
+  --color-marca-100: #d9eaff;
+  --color-marca-500: #2563eb;
+  --color-marca-600: #1d4ed8;
+  --color-marca-700: #1e40af;
+  --color-superficie: #ffffff;
+  --color-fondo: #f8fafc;
+  --color-borde: #e2e8f0;
+  --color-texto: #0f172a;
+  --color-texto-suave: #64748b;
+}
