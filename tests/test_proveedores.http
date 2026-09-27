@@ -1,0 +1,134 @@
+@baseUrl = http://127.0.0.1:8000
+
+### ==========================================
+### MÓDULO: PROVEEDORES
+### Ejecutar en orden desde un servidor recién iniciado; el estado es en memoria.
+### ==========================================
+
+### 1. [HU-01] Alta de proveedor válida -> 201
+POST {{baseUrl}}/proveedores/
+Content-Type: application/json
+
+{
+  "codigo": "P-01",
+  "razon_social": "ACME SRL",
+  "cuit": "20304050607",
+  "email": "contacto@acme.com",
+  "telefono": "011-4444-5555"
+}
+
+### 2. [HU-01] Alta de un segundo proveedor con código distinto -> 201
+# Necesario para los casos de conflicto y filtro por activo más abajo
+POST {{baseUrl}}/proveedores/
+Content-Type: application/json
+
+{
+  "codigo": "P-02",
+  "razon_social": "BETA SA",
+  "cuit": "20304050608"
+}
+
+### 3. [RN-02] Alta con código duplicado -> 409
+POST {{baseUrl}}/proveedores/
+Content-Type: application/json
+
+{
+  "codigo": "P-01",
+  "razon_social": "OTRA EMPRESA SA",
+  "cuit": "20304050609"
+}
+
+### 4. [RN-01] Alta con código vacío -> 422
+POST {{baseUrl}}/proveedores/
+Content-Type: application/json
+
+{
+  "codigo": "",
+  "razon_social": "ACME SRL",
+  "cuit": "20304050607"
+}
+
+### 5. [RN-03] Alta con razón social muy corta -> 422
+POST {{baseUrl}}/proveedores/
+Content-Type: application/json
+
+{
+  "codigo": "P-99",
+  "razon_social": "AB",
+  "cuit": "20304050607"
+}
+
+### 6. [cuit] Alta con CUIT demasiado corto -> 422
+POST {{baseUrl}}/proveedores/
+Content-Type: application/json
+
+{
+  "codigo": "P-99",
+  "razon_social": "ACME SRL",
+  "cuit": "123"
+}
+
+### 7. [HU-02] Listar proveedores -> 200
+GET {{baseUrl}}/proveedores/
+
+### 8. [HU-02] Listar proveedores paginado -> 200
+GET {{baseUrl}}/proveedores/?skip=0&limit=5
+
+### 9. [HU-05] Desactivar proveedor 2 (borrado lógico) -> 200
+PUT {{baseUrl}}/proveedores/2/desactivar
+
+### 10. [HU-02] Listar solo proveedores activos -> 200 (solo id 1)
+GET {{baseUrl}}/proveedores/?activo=true
+
+### 11. [HU-02] Listar solo proveedores inactivos -> 200 (solo id 2)
+GET {{baseUrl}}/proveedores/?activo=false
+
+### 12. [HU-03] Consultar proveedor por ID existente -> 200
+GET {{baseUrl}}/proveedores/1
+
+### 13. [RN-04] Consultar proveedor por ID inexistente -> 404
+GET {{baseUrl}}/proveedores/999
+
+### 14. [HU-04] Actualizar proveedor 1 (reemplazo total) -> 200
+PUT {{baseUrl}}/proveedores/1
+Content-Type: application/json
+
+{
+  "codigo": "P-01",
+  "razon_social": "ACME SRL ACTUALIZADA",
+  "cuit": "20304050607",
+  "email": "nuevo@acme.com",
+  "telefono": "011-5555-6666"
+}
+
+### 15. [RN-02] Actualizar proveedor 1 con el código del proveedor 2 -> 409
+PUT {{baseUrl}}/proveedores/1
+Content-Type: application/json
+
+{
+  "codigo": "P-02",
+  "razon_social": "ACME SRL",
+  "cuit": "20304050607"
+}
+
+### 16. [RN-04] Actualizar proveedor inexistente -> 404
+PUT {{baseUrl}}/proveedores/999
+Content-Type: application/json
+
+{
+  "codigo": "P-88",
+  "razon_social": "NUEVA SA",
+  "cuit": "20304050607"
+}
+
+### 17. [RN-05] Desactivar proveedor 2 ya inactivo (repetido) -> 409
+PUT {{baseUrl}}/proveedores/2/desactivar
+
+### 18. [RN-04] Desactivar proveedor inexistente -> 404
+PUT {{baseUrl}}/proveedores/999/desactivar
+
+### 19. [query] Listar con limit fuera de rango (>50) -> 422
+GET {{baseUrl}}/proveedores/?limit=51
+
+### 20. [query] Listar con skip negativo -> 422
+GET {{baseUrl}}/proveedores/?skip=-1
