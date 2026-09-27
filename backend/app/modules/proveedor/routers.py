@@ -2,15 +2,30 @@ from fastapi import APIRouter, HTTPException, Path, Query, status
 from typing import List, Optional
 
 from app.core.database import SessionDep
+from app.core.schemas import MensajeError
 
 from . import schemas, services
 
 router = APIRouter(prefix="/proveedores", tags=["Proveedores"])
 
+# Respuestas de error declaradas para que Swagger UI las muestre junto al 422
+RESPUESTA_404 = {
+    404: {"model": MensajeError, "description": "El proveedor no existe"}
+}
+RESPUESTA_409 = {
+    409: {"model": MensajeError, "description": "Ya existe un proveedor con ese código"}
+}
+RESPUESTA_409_INACTIVO = {
+    409: {"model": MensajeError, "description": "El proveedor ya está desactivado"}
+}
+
 
 # POST /proveedores/ -> 201
 @router.post(
-    "/", response_model=schemas.ProveedorRead, status_code=status.HTTP_201_CREATED
+    "/",
+    response_model=schemas.ProveedorRead,
+    status_code=status.HTTP_201_CREATED,
+    responses={**RESPUESTA_409},
 )
 def alta_proveedor(proveedor: schemas.ProveedorCreate, session: SessionDep):
     nuevo = services.crear(session, proveedor)
@@ -37,7 +52,10 @@ def listar_proveedores(
 
 # GET /proveedores/{id} -> 200
 @router.get(
-    "/{id}", response_model=schemas.ProveedorRead, status_code=status.HTTP_200_OK
+    "/{id}",
+    response_model=schemas.ProveedorRead,
+    status_code=status.HTTP_200_OK,
+    responses={**RESPUESTA_404},
 )
 def detalle_proveedor(session: SessionDep, id: int = Path(..., gt=0)):
     proveedor = services.obtener_por_id(session, id)
@@ -50,7 +68,10 @@ def detalle_proveedor(session: SessionDep, id: int = Path(..., gt=0)):
 
 # PUT /proveedores/{id} -> 200
 @router.put(
-    "/{id}", response_model=schemas.ProveedorRead, status_code=status.HTTP_200_OK
+    "/{id}",
+    response_model=schemas.ProveedorRead,
+    status_code=status.HTTP_200_OK,
+    responses={**RESPUESTA_404, **RESPUESTA_409},
 )
 def actualizar_proveedor(
     proveedor: schemas.ProveedorCreate, session: SessionDep, id: int = Path(..., gt=0)
@@ -73,6 +94,7 @@ def actualizar_proveedor(
     "/{id}/desactivar",
     response_model=schemas.ProveedorRead,
     status_code=status.HTTP_200_OK,
+    responses={**RESPUESTA_404, **RESPUESTA_409_INACTIVO},
 )
 def borrado_logico(session: SessionDep, id: int = Path(..., gt=0)):
     desactivado, error = services.desactivar(session, id)

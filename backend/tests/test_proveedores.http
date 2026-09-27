@@ -3,6 +3,8 @@
 ### ==========================================
 ### MÓDULO: PROVEEDORES
 ### Ejecutar en orden contra una base sin proveedores previos (los códigos P-01/P-02 se reutilizan en varios casos).
+### Las referencias [HU-xx] / [RN-xx] corresponden a las historias de
+### usuario y reglas de negocio del TP Integrador de la Unidad 5.
 ### ==========================================
 
 ### 1. [HU-01] Alta de proveedor válida -> 201
@@ -28,7 +30,7 @@ Content-Type: application/json
   "cuit": "20304050608"
 }
 
-### 3. [RN-02] Alta con código duplicado -> 409
+### 3. [HU-02] Alta con código duplicado -> 409
 POST {{baseUrl}}/proveedores/
 Content-Type: application/json
 
@@ -38,7 +40,7 @@ Content-Type: application/json
   "cuit": "20304050609"
 }
 
-### 4. [RN-01] Alta con código vacío -> 422
+### 4. [HU-02] Alta con código vacío -> 422
 POST {{baseUrl}}/proveedores/
 Content-Type: application/json
 
@@ -48,7 +50,7 @@ Content-Type: application/json
   "cuit": "20304050607"
 }
 
-### 5. [RN-03] Alta con razón social muy corta -> 422
+### 5. [HU-02] Alta con razón social muy corta -> 422
 POST {{baseUrl}}/proveedores/
 Content-Type: application/json
 
@@ -58,7 +60,7 @@ Content-Type: application/json
   "cuit": "20304050607"
 }
 
-### 6. [cuit] Alta con CUIT demasiado corto -> 422
+### 6. [HU-02] Alta con CUIT demasiado corto -> 422
 POST {{baseUrl}}/proveedores/
 Content-Type: application/json
 
@@ -74,7 +76,7 @@ GET {{baseUrl}}/proveedores/
 ### 8. [HU-02] Listar proveedores paginado -> 200
 GET {{baseUrl}}/proveedores/?skip=0&limit=5
 
-### 9. [HU-05] Desactivar proveedor 2 (borrado lógico) -> 200
+### 9. [RN-05] Desactivar proveedor 2 (borrado lógico) -> 200
 PUT {{baseUrl}}/proveedores/2/desactivar
 
 ### 10. [HU-02] Listar solo proveedores activos -> 200 (solo id 1)
@@ -83,13 +85,13 @@ GET {{baseUrl}}/proveedores/?activo=true
 ### 11. [HU-02] Listar solo proveedores inactivos -> 200 (solo id 2)
 GET {{baseUrl}}/proveedores/?activo=false
 
-### 12. [HU-03] Consultar proveedor por ID existente -> 200
+### 12. [HU-01] Consultar proveedor por ID existente -> 200
 GET {{baseUrl}}/proveedores/1
 
 ### 13. [RN-04] Consultar proveedor por ID inexistente -> 404
 GET {{baseUrl}}/proveedores/999
 
-### 14. [HU-04] Actualizar proveedor 1 (reemplazo total) -> 200
+### 14. [HU-01] Actualizar proveedor 1 (reemplazo total) -> 200
 PUT {{baseUrl}}/proveedores/1
 Content-Type: application/json
 
@@ -101,7 +103,7 @@ Content-Type: application/json
   "telefono": "011-5555-6666"
 }
 
-### 15. [RN-02] Actualizar proveedor 1 con el código del proveedor 2 -> 409
+### 15. [HU-02] Actualizar proveedor 1 con el código del proveedor 2 -> 409
 PUT {{baseUrl}}/proveedores/1
 Content-Type: application/json
 
@@ -121,14 +123,14 @@ Content-Type: application/json
   "cuit": "20304050607"
 }
 
-### 17. [RN-05] Desactivar proveedor 2 ya inactivo (repetido) -> 409
+### 17. [HU-02] Desactivar proveedor 2 ya inactivo (repetido) -> 409
 PUT {{baseUrl}}/proveedores/2/desactivar
 
 ### 18. [RN-04] Desactivar proveedor inexistente -> 404
 PUT {{baseUrl}}/proveedores/999/desactivar
 
-### 19. [query] Listar con limit fuera de rango (>50) -> 422
+### 19. [HU-02] Listar con limit fuera de rango (>50) -> 422
 GET {{baseUrl}}/proveedores/?limit=51
 
-### 20. [query] Listar con skip negativo -> 422
+### 20. [HU-02] Listar con skip negativo -> 422
 GET {{baseUrl}}/proveedores/?skip=-1

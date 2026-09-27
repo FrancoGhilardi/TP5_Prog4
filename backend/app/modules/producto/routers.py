@@ -2,10 +2,19 @@ from fastapi import APIRouter, HTTPException, Path, Query, status
 from typing import List
 
 from app.core.database import SessionDep
+from app.core.schemas import MensajeError
 
 from . import schemas, services
 
 router = APIRouter(prefix="/productos", tags=["Productos"])
+
+# Respuestas de error declaradas para que Swagger UI las muestre junto al 422
+RESPUESTA_404 = {
+    404: {"model": MensajeError, "description": "El producto no existe"}
+}
+RESPUESTA_409 = {
+    409: {"model": MensajeError, "description": "Ya existe un producto con ese nombre"}
+}
 
 
 # ---------------------------------------------------------
@@ -13,7 +22,10 @@ router = APIRouter(prefix="/productos", tags=["Productos"])
 # Método: POST | Endpoint: /productos | Estado: 201 Created
 # ---------------------------------------------------------
 @router.post(
-    "/", response_model=schemas.ProductoRead, status_code=status.HTTP_201_CREATED
+    "/",
+    response_model=schemas.ProductoRead,
+    status_code=status.HTTP_201_CREATED,
+    responses={**RESPUESTA_409},
 )
 def alta_producto(producto: schemas.ProductoCreate, session: SessionDep):
     nuevo, error = services.crear(session, producto)
@@ -40,7 +52,10 @@ def listar_productos(
 # Método: GET | Endpoint: /productos/{id} | Estado: 200 OK
 # ---------------------------------------------------------
 @router.get(
-    "/{id}", response_model=schemas.ProductoRead, status_code=status.HTTP_200_OK
+    "/{id}",
+    response_model=schemas.ProductoRead,
+    status_code=status.HTTP_200_OK,
+    responses={**RESPUESTA_404},
 )
 def detalle_producto(session: SessionDep, id: int = Path(..., gt=0)):
     producto = services.obtener_por_id(session, id)
@@ -56,7 +71,10 @@ def detalle_producto(session: SessionDep, id: int = Path(..., gt=0)):
 # Método: PUT | Endpoint: /productos/{id} | Estado: 200 OK
 # ---------------------------------------------------------
 @router.put(
-    "/{id}", response_model=schemas.ProductoRead, status_code=status.HTTP_200_OK
+    "/{id}",
+    response_model=schemas.ProductoRead,
+    status_code=status.HTTP_200_OK,
+    responses={**RESPUESTA_404, **RESPUESTA_409},
 )
 def actualizar_producto(
     producto: schemas.ProductoCreate, session: SessionDep, id: int = Path(..., gt=0)
@@ -83,6 +101,7 @@ def actualizar_producto(
     "/{id}/desactivar",
     response_model=schemas.ProductoRead,
     status_code=status.HTTP_200_OK,
+    responses={**RESPUESTA_404},
 )
 def borrado_logico(session: SessionDep, id: int = Path(..., gt=0)):
     desactivado = services.desactivar(session, id)
@@ -101,6 +120,7 @@ def borrado_logico(session: SessionDep, id: int = Path(..., gt=0)):
     "/{id}/stock",
     response_model=schemas.ProductoStockResponse,
     status_code=status.HTTP_200_OK,
+    responses={**RESPUESTA_404},
 )
 def consultar_stock(session: SessionDep, id: int = Path(..., gt=0)):
     resultado = services.obtener_estado_stock(session, id)  # Llamada al servicio

@@ -2,15 +2,17 @@
 
 ### ==========================================
 ### MÓDULO: CATEGORÍAS
+### Las referencias [HU-xx] / [RN-xx] corresponden a las historias de
+### usuario y reglas de negocio del TP Integrador de la Unidad 5.
 ### ==========================================
 
-### 1. Listar categorías (incluye las semillas MUE-01 y ELE-02)
+### 1. [HU-01] Listar categorías (incluye las semillas MUE-01 y ELE-02)
 GET {{baseUrl}}/categorias/
 
-### 2. Listar categorías paginado
+### 2. [HU-01] Listar categorías paginado
 GET {{baseUrl}}/categorias/?skip=0&limit=1
 
-### 3. Crear categoría -> 201
+### 3. [HU-01] Crear categoría -> 201
 POST {{baseUrl}}/categorias/
 Content-Type: application/json
 
@@ -19,13 +21,31 @@ Content-Type: application/json
   "descripcion": "Herramientas Manuales"
 }
 
-### 4. Detalle de categoría existente -> 200
+### 4. [HU-02] Crear categoría con código duplicado -> 409
+POST {{baseUrl}}/categorias/
+Content-Type: application/json
+
+{
+  "codigo": "HER-03",
+  "descripcion": "Otra descripción para el mismo código"
+}
+
+### 5. [HU-02] Crear categoría con código fuera del formato AAA-00 -> 422
+POST {{baseUrl}}/categorias/
+Content-Type: application/json
+
+{
+  "codigo": "HERRAMIENTAS",
+  "descripcion": "Herramientas Manuales"
+}
+
+### 6. [HU-01] Detalle de categoría existente -> 200
 GET {{baseUrl}}/categorias/3
 
-### 5. Detalle de categoría inexistente -> 404
+### 7. [RN-04] Detalle de categoría inexistente -> 404
 GET {{baseUrl}}/categorias/999
 
-### 6. Actualizar categoría (reemplazo total) -> 200
+### 8. [HU-01] Actualizar categoría (reemplazo total) -> 200
 PUT {{baseUrl}}/categorias/3
 Content-Type: application/json
 
@@ -34,7 +54,16 @@ Content-Type: application/json
   "descripcion": "Herramientas de Jardinería y Taller"
 }
 
-### 7. Actualizar categoría inexistente -> 404
+### 9. [HU-02] Actualizar categoría 3 con el código de otra categoría -> 409
+PUT {{baseUrl}}/categorias/3
+Content-Type: application/json
+
+{
+  "codigo": "MUE-01",
+  "descripcion": "Intento de reusar un código existente"
+}
+
+### 10. [RN-04] Actualizar categoría inexistente -> 404
 PUT {{baseUrl}}/categorias/999
 Content-Type: application/json
 
@@ -43,7 +72,7 @@ Content-Type: application/json
   "descripcion": "Herramientas de Jardinería y Taller"
 }
 
-### 8. Desactivar categoría (borrado lógico) -> 200
+### 11. [RN-05] Desactivar categoría (borrado lógico, persiste en PostgreSQL) -> 200
 PUT {{baseUrl}}/categorias/3/desactivar
 
 
@@ -51,7 +80,7 @@ PUT {{baseUrl}}/categorias/3/desactivar
 ### MÓDULO: PRODUCTOS
 ### ==========================================
 
-### 9. Crear producto -> 201
+### 12. [HU-01] Crear producto -> 201
 POST {{baseUrl}}/productos/
 Content-Type: application/json
 
@@ -64,7 +93,7 @@ Content-Type: application/json
   "stock_minimo": 5
 }
 
-### 10. Crear producto con nombre duplicado -> 409
+### 13. [HU-02] Crear producto con nombre duplicado -> 409
 POST {{baseUrl}}/productos/
 Content-Type: application/json
 
@@ -76,16 +105,16 @@ Content-Type: application/json
   "stock_minimo": 1
 }
 
-### 11. Listar productos paginado
+### 14. [HU-01] Listar productos paginado
 GET {{baseUrl}}/productos/?skip=0&limit=5
 
-### 12. Detalle de producto existente -> 200
+### 15. [HU-01] Detalle de producto existente -> 200
 GET {{baseUrl}}/productos/1
 
-### 13. Detalle de producto inexistente -> 404
+### 16. [RN-04] Detalle de producto inexistente -> 404
 GET {{baseUrl}}/productos/99
 
-### 14. Actualizar producto (reemplazo total) -> 200
+### 17. [HU-01] Actualizar producto (reemplazo total) -> 200
 # Se baja el stock a 3 para forzar la alerta de bajo_stock_minimo
 PUT {{baseUrl}}/productos/1
 Content-Type: application/json
@@ -98,7 +127,7 @@ Content-Type: application/json
   "stock_minimo": 5
 }
 
-### 15. Actualizar producto inexistente -> 404
+### 18. [RN-04] Actualizar producto inexistente -> 404
 PUT {{baseUrl}}/productos/99
 Content-Type: application/json
 
@@ -110,13 +139,14 @@ Content-Type: application/json
   "stock_minimo": 1
 }
 
-### 16. Consultar estado de stock -> 200 (bajo_stock_minimo: true tras el PUT anterior)
+### 19. [HU-02] Consultar estado de stock (regla de negocio en el service) -> 200
+# bajo_stock_minimo: true tras el PUT anterior
 GET {{baseUrl}}/productos/1/stock
 
-### 17. Desactivar producto (borrado lógico) -> 200
+### 20. [RN-05] Desactivar producto (borrado lógico, persiste en PostgreSQL) -> 200
 PUT {{baseUrl}}/productos/1/desactivar
 
-### 18. Crear producto con nombre vacío (solo espacios) -> 422
+### 21. [RN-02] Crear producto con nombre vacío (solo espacios) -> 422
 POST {{baseUrl}}/productos/
 Content-Type: application/json
 
@@ -128,7 +158,7 @@ Content-Type: application/json
   "stock_minimo": 1
 }
 
-### 19. Crear producto con categoría inválida y precio negativo -> 422
+### 22. [RN-03] Crear producto con categoría inválida y precio negativo -> 422
 POST {{baseUrl}}/productos/
 Content-Type: application/json
 
@@ -140,7 +170,7 @@ Content-Type: application/json
   "stock_minimo": 5
 }
 
-### 20. Crear producto con precio 0 -> 422 (precio usa gt=0, ver README)
+### 23. [RN-03] Crear producto con precio 0 -> 422 (precio usa gt=0, ver README)
 POST {{baseUrl}}/productos/
 Content-Type: application/json
 

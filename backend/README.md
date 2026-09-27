@@ -73,6 +73,8 @@ Servidor disponible en `http://localhost:8000`. Al arrancar, verifica la conexi�
 
 Cada endpoint puede probarse desde "Try it out" sin herramientas externas; los schemas Pydantic (`ProductoCreate`, `ProductoRead`, `CategoriaCreate/Read`, `ProveedorCreate/Read`, etc.) se reflejan con sus constraints (`minLength`, `pattern`, `gt`, `ge`).
 
+Cada endpoint declara además sus respuestas de error (`responses=` en el decorador), así que Swagger muestra el 404 y el 409 junto al 422 automático de Pydantic, todos con el schema `MensajeError` (`{"detail": "..."}`).
+
 ## Arquitectura
 
 ```
@@ -82,6 +84,7 @@ backend/
 │   ├── core/
 │   │   ├── config.py           # Settings (pydantic-settings), lee .env
 │   │   ├── database.py         # engine, get_session(), SessionDep
+│   │   ├── schemas.py          # MensajeError: cuerpo de los errores 404/409 en Swagger
 │   │   └── seed.py             # seed idempotente de categorías iniciales
 │   └── modules/
 │       ├── categoria/  (models.py, schemas.py, services.py, routers.py)
@@ -129,6 +132,7 @@ Todos los listados soportan paginación `skip`/`limit`. Recurso inexistente → 
 | `nombre` de producto obligatorio, no vacío ni solo espacios | Pydantic (`min_length=1` + validador) | 422    |
 | `precio` de producto mayor a 0                              | Pydantic (`gt=0`)                      | 422    |
 | `nombre` de producto único                                  | Service + `UNIQUE` en tabla            | 409    |
+| `codigo` de categoría único                                 | Service + `UNIQUE` en tabla            | 409    |
 | `codigo` de proveedor único                                 | Service + `UNIQUE` en tabla            | 409    |
 | Proveedor ya desactivado no puede desactivarse de nuevo     | Service                                | 409    |
 | Consultar/actualizar/desactivar un id inexistente           | Service (`None` → router traduce)      | 404    |
@@ -144,9 +148,15 @@ Todos los listados soportan paginación `skip`/`limit`. Recurso inexistente → 
 
 **Unicidad de `nombre` en Producto** (409 ante duplicado): no existía en la versión original y se agregó porque un catálogo con nombres repetidos no tiene forma clara de identificar productos distintos. Se implementa con `UNIQUE` en la columna más un chequeo previo en el service, que es el que decide el mensaje de error.
 
+**El chequeo de unicidad siempre vive en el service, nunca solo en la base.** Las tres tablas tienen índices `UNIQUE` (`producto.nombre`, `categoria.codigo`, `proveedor.codigo`), pero apoyarse únicamente en ellos hace que el duplicado llegue como `IntegrityError` y la API responda 500. Cada service consulta antes (`existe_nombre` / `existe_codigo`) y devuelve `"conflict"`, que el router traduce a 409 con un mensaje que nombra el valor en conflicto. El `UNIQUE` queda como defensa en profundidad ante escrituras concurrentes.
+
+**Sin endpoints PATCH.** La consigna enumera el CRUD como GET/POST/PUT/DELETE, así que la actualización es total (`PUT /{id}` con el schema `*Create`). Los schemas `*Update` (todos los campos opcionales) quedan definidos como contrato listo para una actualización parcial futura, sin router que los use todavía.
+
 ## Tests
 
-`backend/tests/test_api.http` y `backend/tests/test_proveedores.http` — casos de REST Client (VS Code) que cubren alta, listado paginado, detalle, actualización, borrado lógico y los casos de error (404, 409, 422) de los tres módulos.
+`backend/tests/test_api.http` (categorías y productos) y `backend/tests/test_proveedores.http` — casos de REST Client (VS Code) que cubren alta, listado paginado, detalle, actualización, borrado lógico y los casos de error (404, 409, 422) de los tres módulos. Cada caso está etiquetado con la historia de usuario o regla de negocio del TP que verifica (`[HU-01]`, `[HU-02]`, `[RN-02]`…`[RN-05]`).
+
+Se ejecutan contra el servidor corriendo (`fastapi dev app/main.py`) y en orden, porque varios casos dependen de los ids creados por los anteriores.
 
 ## Checklist de entrega
 

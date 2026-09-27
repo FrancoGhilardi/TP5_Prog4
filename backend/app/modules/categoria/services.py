@@ -6,12 +6,21 @@ from .models import Categoria
 from .schemas import CategoriaCreate
 
 
-def crear(session: Session, data: CategoriaCreate) -> Categoria:
+def existe_codigo(session: Session, codigo: str, excluir_id: Optional[int] = None) -> bool:
+    sentencia = select(Categoria).where(Categoria.codigo == codigo)
+    if excluir_id is not None:
+        sentencia = sentencia.where(Categoria.id != excluir_id)
+    return session.exec(sentencia).first() is not None
+
+
+def crear(session: Session, data: CategoriaCreate) -> tuple[Optional[Categoria], Optional[str]]:
+    if existe_codigo(session, data.codigo):
+        return None, "conflict"
     nueva = Categoria.model_validate(data)
     session.add(nueva)
     session.commit()
     session.refresh(nueva)
-    return nueva
+    return nueva, None
 
 
 def obtener_todas(session: Session, skip: int = 0, limit: int = 10) -> List[Categoria]:
@@ -22,16 +31,20 @@ def obtener_por_id(session: Session, id: int) -> Optional[Categoria]:
     return session.get(Categoria, id)
 
 
-def actualizar_total(session: Session, id: int, data: CategoriaCreate) -> Optional[Categoria]:
+def actualizar_total(
+    session: Session, id: int, data: CategoriaCreate
+) -> tuple[Optional[Categoria], Optional[str]]:
     categoria = session.get(Categoria, id)
     if categoria is None:
-        return None
+        return None, "not_found"
+    if existe_codigo(session, data.codigo, excluir_id=id):
+        return None, "conflict"
     for campo, valor in data.model_dump().items():
         setattr(categoria, campo, valor)
     session.add(categoria)
     session.commit()
     session.refresh(categoria)
-    return categoria
+    return categoria, None
 
 
 def desactivar(session: Session, id: int) -> Optional[Categoria]:
