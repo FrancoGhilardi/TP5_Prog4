@@ -28,7 +28,11 @@ CREATE DATABASE gestor_productos;
 
 ### 2. Entorno Python
 
+Todos los comandos siguientes se ejecutan desde la carpeta `backend/`:
+
 ```bash
+cd backend
+
 python -m venv venv
 # Windows
 venv\Scripts\activate
@@ -40,7 +44,7 @@ pip install -r requirements.txt
 
 ### 3. Variables de entorno
 
-Copiar `.env.example` a `.env` y ajustar según corresponda:
+Copiar `backend/.env.example` a `backend/.env` y ajustar según corresponda:
 
 ```
 DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/gestor_productos
@@ -72,22 +76,25 @@ Cada endpoint puede probarse desde "Try it out" sin herramientas externas; los s
 ## Arquitectura
 
 ```
-app/
-├── main.py                 # create_app(), lifespan (verifica DB + seed), routers
-├── core/
-│   ├── config.py           # Settings (pydantic-settings), lee .env
-│   ├── database.py         # engine, get_session(), SessionDep
-│   └── seed.py             # seed idempotente de categorías iniciales
-└── modules/
-    ├── categoria/  (models.py, schemas.py, services.py, routers.py)
-    ├── producto/   (idem)
-    └── proveedor/  (idem)
-alembic/
-├── env.py
-└── versions/
-tests/
-├── test_api.http
-└── test_proveedores.http
+backend/
+├── app/
+│   ├── main.py                 # create_app(), lifespan (verifica DB + seed), routers
+│   ├── core/
+│   │   ├── config.py           # Settings (pydantic-settings), lee .env
+│   │   ├── database.py         # engine, get_session(), SessionDep
+│   │   └── seed.py             # seed idempotente de categorías iniciales
+│   └── modules/
+│       ├── categoria/  (models.py, schemas.py, services.py, routers.py)
+│       ├── producto/   (idem)
+│       └── proveedor/  (idem)
+├── alembic/
+│   ├── env.py
+│   └── versions/
+├── alembic.ini
+├── requirements.txt
+└── tests/
+    ├── test_api.http
+    └── test_proveedores.http
 ```
 
 **Flujo por request:** `Router` recibe la petición HTTP e inyecta una `Session` (`SessionDep`), delega la validación de negocio en `Service`, que opera sobre el modelo `SQLModel` (`table=True`) contra PostgreSQL. Los schemas Pydantic son el contrato de entrada/salida — el modelo de base nunca se expone directamente.
@@ -133,17 +140,17 @@ Todos los listados soportan paginación `skip`/`limit`. Recurso inexistente → 
 
 **`descripcion` se agregó a `Producto`** como campo opcional (`default=""`), para dejar el modelo alineado con lo que necesita consumir el frontend.
 
-**Migraciones con Alembic** en vez de `create_all()` directo, para tener un esquema versionado y reversible. `init_db()` queda disponible en `app/core/database.py` solo como utilidad de desarrollo, sin usarse en el arranque normal.
+**Migraciones con Alembic** en vez de `create_all()` directo, para tener un esquema versionado y reversible. `init_db()` queda disponible en `backend/app/core/database.py` solo como utilidad de desarrollo, sin usarse en el arranque normal.
 
 **Unicidad de `nombre` en Producto** (409 ante duplicado): no existía en la versión original y se agregó porque un catálogo con nombres repetidos no tiene forma clara de identificar productos distintos. Se implementa con `UNIQUE` en la columna más un chequeo previo en el service, que es el que decide el mensaje de error.
 
 ## Tests
 
-`tests/test_api.http` y `tests/test_proveedores.http` — casos de REST Client (VS Code) que cubren alta, listado paginado, detalle, actualización, borrado lógico y los casos de error (404, 409, 422) de los tres módulos.
+`backend/tests/test_api.http` y `backend/tests/test_proveedores.http` — casos de REST Client (VS Code) que cubren alta, listado paginado, detalle, actualización, borrado lógico y los casos de error (404, 409, 422) de los tres módulos.
 
 ## Checklist de entrega
 
-- [ ] `venv/` y `__pycache__/` eliminados antes de comprimir
-- [ ] `.env` **no** incluido en el zip; `.env.example` sí
-- [ ] `requirements.txt` incluye fastapi, uvicorn, sqlmodel y sqlalchemy
+- [ ] `backend/venv/` y `__pycache__/` eliminados antes de comprimir
+- [ ] `backend/.env` **no** incluido en el zip; `backend/.env.example` sí
+- [ ] `backend/requirements.txt` incluye fastapi, uvicorn, sqlmodel y sqlalchemy
 - [ ] Proyecto probado en limpio: clonar, seguir este README paso a paso, confirmar que levanta
